@@ -1,0 +1,19 @@
+# Relevant Files:
+## Root
+- Makefile - just added the necessary information to properly compile my own user and kernel programs.
+- mmap_notes.md - my notes on how mmap and munmap work. Also includes my strategy for implementing mmap.
+
+## /kernel
+- defs.h - added prototypes and struct declarations for relevant kernel code. XV6 doesn't use header guards so including stuff can be a pain. This was the easiest way to do it without struggling through compiler errors
+- mmap.c - code for mmap, the trap handler that is caused when a trap results from accessing a memory mapped region of virtual memory, and the code for reading a file from an inode into the mapped region. Also contains munmap just returning an error, though I have added comments to describe what munmap should do.
+    - functions: mmap(), mmap_trap_handler(), mmap_readfile(), and munmap()
+- proc.h - added the definition of the vm_area struct used to store information about a memory mapped region. Also added an array of sixteen of these vm_area struct to the struct representing a process, as well as a num_maps variable for keeping track of the how many virtual memory regions a process has mapped.
+- syscall.c - added the prototypes for the syscalls that handle mmap and munmap and added them to the array that maps syscalls to their respective number.
+- syscall.h - just defined the syscall number for mmap and munmap (22, and 23 respectively).
+- sysfile.c - added the syscalls that simply rfetch the user arguments and return the result of the mmap and munmap functions defined in mmap.c
+- trap.c - added code for handling page faults. Checks if the supervisor trap value (read with r_scause()) is equal to 13 or 15, meaning a page fault has occurred. For some reason this results in an infinite page fault error, though it does not seem to be the result of my code for mmap. This error occurs in the same way if a page fault is generated just by accessing some obsurdly out of range virtual address.
+
+## /user
+- testmmap.c - very simple file just meant for testing mmap and munmap. creates a file and writes to it before trying to map it into memory with mmap.
+- user.h - added the prototypes for mmap and munmap so that they can be called by user processes.
+- usys.pl - added the syscall entries for mmap and munmap
