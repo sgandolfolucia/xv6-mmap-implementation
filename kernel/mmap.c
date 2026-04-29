@@ -32,7 +32,8 @@ int mmap_trap_handler(struct proc *p, struct vm_area *vma, uint64 va) {
     parent = p->parent;
     acquire(&parent->lock);
     for(int i = 0; i < MAX_MMAPS; i++) {
-        if(!parent->vma[i].valid) continue;
+        if(!parent->vma[i].valid) continue; // not a valid mapping, continue to the next iteration
+
         if(p->vma[i].file == parent->vma[i].file && (va >= parent->vma[i].start_adr && va <= parent->vma[i].end_adr)) {
             uint64 pa = walkaddr(parent->pagetable, va);
             if(pa) {
@@ -150,4 +151,11 @@ int munmap(void *addr, int size) {
         fileclose(vma->file);
     }
     return 0; // success
+}
+
+// todo:
+// function for optimizing adding a vma into a processes vma list to
+// reduce complexity when a single process requests several memory mappings.
+int mmap_vma_insert(struct vm_area *vma) {
+    return 0;
 }
