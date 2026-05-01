@@ -74,7 +74,7 @@ usertrap(void)
     for(i = 0; i < MAX_MMAPS; i++) {
       vma = &p->vma[i];
       if(vma->valid && vma->start_adr <= fault_va && vma->end_adr >= fault_va) {
-          // this pagefault is in a memory mapped region
+        // this pagefault is in a memory mapped region
         if(!mmap_trap_handler(p, vma, fault_va)) {
           printf("pagefault: couldn't allocate physical memory\n");
           setkilled(p);
