@@ -70,10 +70,9 @@ void* mmap(void *addr, uint32 length, int prot, int flags, int fd, uint32 offset
     struct file *f = p->ofile[fd];
     uint64 map_adr_start;
     uint64 map_adr_end;
-
-    // replace this with a check for if the address is already in a mapped region 
-    // or if the length of the mapping collides with another mapped region
-    if(p->vma[p->num_maps].valid || p->num_maps == (MAX_MMAPS - 1)) {
+    
+    // no more space in vma array
+    if(p->num_maps == (MAX_MMAPS - 1)) {
         return MMAP_FAILURE; // can't create a mapping
     }
 
@@ -84,6 +83,13 @@ void* mmap(void *addr, uint32 length, int prot, int flags, int fd, uint32 offset
         map_adr_start = PGROUNDUP(p->vma[p->num_maps-1].end_adr + length);
     }
     map_adr_end = PGROUNDUP(map_adr_start + length); // set the end address--its the same in either of the above cases
+
+    // replace this with a check for if the address is already in a mapped region 
+    // or if the length of the mapping collides with another mapped region
+    pte_t pte_field = *walk(p->pagetable, map_adr_start, 0) & *walk(p->pagetable, map_adr_end, 0);
+    if(pte_field & PTE_V) {
+        return MMAP_FAILURE;
+    }
 
 
     // bad address, something crazy happened
@@ -156,6 +162,6 @@ int munmap(void *addr, int size) {
 // todo:
 // function for optimizing adding a vma into a processes vma list to
 // reduce complexity when a single process requests several memory mappings.
-int mmap_vma_insert(struct vm_area *vma) {
+int mmap_vma_insert(struct vm_area *vma_list) {
     return 0;
 }
