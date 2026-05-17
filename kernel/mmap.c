@@ -73,7 +73,7 @@ void* mmap(void *addr, uint32 length, int prot, int flags, int fd, uint32 offset
     
     // no more space in vma array
     if(p->num_maps == (MAX_MMAPS - 1)) {
-        return MMAP_FAILURE; // can't create a mapping
+        return MMAP_FAILURE;
     }
 
     if(p->num_maps == 0) {
@@ -84,8 +84,7 @@ void* mmap(void *addr, uint32 length, int prot, int flags, int fd, uint32 offset
     }
     map_adr_end = PGROUNDUP(map_adr_start + length); // set the end address--its the same in either of the above cases
 
-    // replace this with a check for if the address is already in a mapped region 
-    // or if the length of the mapping collides with another mapped region
+    // ensure that this mapping is not colliding with an already mapped region
     pte_t pte_field = *walk(p->pagetable, map_adr_start, 0) & *walk(p->pagetable, map_adr_end, 0);
     if(pte_field & PTE_V) {
         return MMAP_FAILURE;
@@ -127,7 +126,8 @@ int munmap(void *addr, int size) {
     size = PGROUNDUP(size);
     struct proc *p = myproc();
     struct vm_area *vma = 0;
-    for(int i = 0; i < MAX_MMAPS; i++) {
+    int i;
+    for(i = 0; i < MAX_MMAPS; i++) {
         if(p->vma[i].valid && unmap_adr >= p->vma[i].start_adr && unmap_adr + size <= p->vma[i].end_adr) {
             vma = &(p->vma[i]);
             break;
@@ -155,13 +155,13 @@ int munmap(void *addr, int size) {
     if(size == vma->len) {
         vma->valid = 0;
         fileclose(vma->file);
+        p->num_maps--;
+        
+        // shift virtual memory mappings to maintain sorting
+        // makes life easier when creating new mappings
+        for(; i < MAX_MMAPS-1; i++) {
+            p->vma[i] = p->vma[i+1];
+        }
     }
     return 0; // success
-}
-
-// todo:
-// function for optimizing adding a vma into a processes vma list to
-// reduce complexity when a single process requests several memory mappings.
-int mmap_vma_insert(struct vm_area *vma_list) {
-    return 0;
 }
